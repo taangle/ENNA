@@ -10,7 +10,8 @@ POSTLIMINARY_LAYER_COUNT = 1
 MIN_HIDDEN_MUTATIONS = 1
 MAX_HIDDEN_MUTATIONS = 6
 UNIT_MUTATION_MARGIN = 32
-HIDDEN_LAYER_COUNT_MUTATION_CHANCE = .2
+DROPOUT_APPEARANCE_CHANCE = .2
+HIDDEN_LAYER_COUNT_MUTATION_CHANCE = .25
 ACTIVATION_MUTATION_CHANCE = .2
 FILTER_MUTATION_CHANCE = .2
 KERNEL_MUTATION_CHANCE = .2
@@ -26,6 +27,7 @@ class Genome:
         # a fitness and model of None indicate that fitness has not yet been determined for this genome
         self.fitness = None
         self.accuracy = None
+        self.training_time = None
         self.model = None
 
     def calculate_fitness(self, data):
@@ -38,13 +40,13 @@ class Genome:
         start_time = time.time()
         self.model.fit(x_train, y_train, batch_size=self.batch_size, epochs=self.epochs)  # validation_split=0.1)
         end_time = time.time()
-        training_time = end_time - start_time
-        print("Training time:", training_time)
+        self.training_time = end_time - start_time
+        print("Training time:", self.training_time)
 
         score = self.model.evaluate(x_test, y_test, verbose=0)
         self.accuracy = score[1]
         # TODO adjust how training time affects fitness, currently is negligible for long training times
-        self.fitness = self.accuracy + (1 / training_time)
+        self.fitness = self.accuracy + (1 / self.training_time)
 
     def _add_layers_to_model(self):
         for layer in self.layers:
@@ -77,8 +79,9 @@ class Genome:
         return string
 
 
+# TODO
 def pick_random_activation():
-    return random.choice(['relu', 'elu', 'tanh', 'sigmoid'])
+    return random.choice(['relu'])  # , 'elu', 'tanh', 'sigmoid'])
 
 
 def generate_random_population(pop_size, batch_size, epochs, input_shape, min_filters, max_filters, min_kernel_dim, max_kernel_dim, min_stride_dim, max_stride_dim, min_hidden_layers, max_hidden_layers, min_units, max_units, max_dropout, num_classes):
@@ -105,10 +108,11 @@ def generate_random_population(pop_size, batch_size, epochs, input_shape, min_fi
                 "units": random.randint(min_units, max_units),
                 "activation": pick_random_activation()
             })
-            layers.append({
-                "type": 'Dropout',
-                "rate": random.uniform(0, max_dropout)
-            })
+            if random.random() < DROPOUT_APPEARANCE_CHANCE:
+                layers.append({
+                    "type": 'Dropout',
+                    "rate": random.uniform(0, max_dropout)
+                })
 
         layers.append(get_an_output_layer(num_classes))
 
@@ -152,10 +156,11 @@ def combine_genomes(genome0, genome1, min_filters, max_filters, min_kernel_dim, 
                     "units": random.randint(min_units, max_units),
                     "activation": pick_random_activation()
                 })
-                extra_hidden_layers.append({
-                    "type": 'Dropout',
-                    "rate": random.uniform(0, max_dropout)
-                })
+                if random.random() < DROPOUT_APPEARANCE_CHANCE:
+                    extra_hidden_layers.append({
+                        "type": 'Dropout',
+                        "rate": random.uniform(0, max_dropout)
+                    })
 
     # I know this section is a little convoluted, but I have double-checked it and I think it's correct
     inner_layer_count0 = len(genome0.layers) - PRELIMINARY_LAYER_COUNT - POSTLIMINARY_LAYER_COUNT

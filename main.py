@@ -141,13 +141,12 @@ def initialize_history_dir(start_time_str):
     with open(f"histories/{start_time_str}/info.csv", mode="w", newline="") as info_file:
         info_writer = csv.writer(info_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
         # TODO add the rest of the params
-        info_writer.writerow(["batch size", "epochs", "min units", "max units"])
-        info_writer.writerow([BATCH_SIZE, EPOCHS, MIN_UNITS, MAX_UNITS])
+        info_writer.writerow(["batch size", "epochs", "pop_size", "max_gen", "gen_to_start_being_elite", "parent_count", "min units", "max units"])
+        info_writer.writerow([BATCH_SIZE, EPOCHS, POP_SIZE, MAX_GEN, GEN_TO_START_BEING_ELITE, PARENT_COUNT, MIN_UNITS, MAX_UNITS])
 
     with open(f"histories/{start_time_str}/history.csv", mode="a", newline="") as history_file:
         history_writer = csv.writer(history_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
-        history_writer.writerow(["generation", "genome", "accuracy", "layer", "type", "units", "activation"])
-
+        history_writer.writerow(["generation", "genome", "accuracy", "training_time", "layer", "type", "units", "activation"])
 
 def record_generation(gen_number, pop, start_time_str):
     with open(f"histories/{start_time_str}/history.csv", mode="a", newline="") as history_file:
@@ -162,6 +161,7 @@ def record_generation(gen_number, pop, start_time_str):
                         gen_number,
                         genome_index,
                         genome.accuracy,
+                        genome.training_time,
                         layer_index,
                         layer["type"],
                         layer["units"],
