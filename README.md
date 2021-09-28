@@ -1,10 +1,10 @@
 # Evolving Neural Network Architectures
 
-This project attempts to use an "evolutionary algorithm" to evolve the architectures of neural networks.
+This project attempts to use an evolutionary algorithm to evolve the architectures of neural networks.
 
 ## Approach
 
-A "population" of neural networks is generated, then the fitness of its members is tested (where fitness is
+A population of neural networks is generated, then the fitness of its members is tested (where fitness is
 proportional to classification accuracy on some dataset).
 The networks with the highest fitness are selected for recombination to create the next generation of networks.
 This process is repeated until a generation limit is reached.
