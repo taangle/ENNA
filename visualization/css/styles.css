@@ -1,0 +1,20 @@
+#wrapper {
+  font-family: sans-serif;
+  font-size: x-large;
+}
+
+svg {
+  border: 1px solid gray;
+  border-radius: 10px;
+  margin: 5px;
+}
+
+#chart {
+  height: 800px;
+  width: 1600px;
+}
+
+#best-line-chart {
+  height: 800px;
+  width: 800px;
+}

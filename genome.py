@@ -1,15 +1,14 @@
-import json
 import random
 import copy
 import time
 from keras.models import Sequential
-from keras.layers import Conv2D, Dense, Dropout, Flatten, MaxPooling2D
+from keras.layers import Conv2D, Dense, Dropout, Flatten
 
 PRELIMINARY_LAYER_COUNT = 2
 POSTLIMINARY_LAYER_COUNT = 1
 MIN_HIDDEN_MUTATIONS = 1
 MAX_HIDDEN_MUTATIONS = 6
-UNIT_MUTATION_MARGIN = 32
+UNIT_MUTATION_MARGIN = 4
 DROPOUT_APPEARANCE_CHANCE = .2
 HIDDEN_LAYER_COUNT_MUTATION_CHANCE = .25
 ACTIVATION_MUTATION_CHANCE = .2
@@ -46,14 +45,13 @@ class Genome:
         score = self.model.evaluate(x_test, y_test, verbose=0)
         self.accuracy = score[1]
         # TODO adjust how training time affects fitness, currently is negligible for long training times
-        self.fitness = self.accuracy + (1 / self.training_time)
+        self.fitness = self.accuracy + (.01 * (1 / self.training_time))
 
     def _add_layers_to_model(self):
         for layer in self.layers:
             layer_object = None
             if layer["type"] == "Conv2D":
                 layer_object = Conv2D(
-                    # TODO if you add another Conv2D, it won't have input_shape
                     input_shape=layer["input_shape"],
                     filters=layer["filters"],
                     kernel_size=layer["kernel_size"],
@@ -72,14 +70,12 @@ class Genome:
             self.model.add(layer_object)
 
     def __str__(self):
-        string = f"=Genome=\n\tFitness: {self.fitness}\n\tAccuracy: {self.accuracy}\n\tLayers:"
-        for layer in self.layers:
-            string += f"\n\t\t{json.dumps(layer)}"
-
+        string = f"=Genome=\n\tFitness: {self.fitness}\n\tAccuracy: {self.accuracy}"
+        # TODO add layers to string in some form
         return string
 
 
-# TODO
+# TODO test these out
 def pick_random_activation():
     return random.choice(['relu'])  # , 'elu', 'tanh', 'sigmoid'])
 
@@ -162,7 +158,7 @@ def combine_genomes(genome0, genome1, min_filters, max_filters, min_kernel_dim, 
                         "rate": random.uniform(0, max_dropout)
                     })
 
-    # I know this section is a little convoluted, but I have double-checked it and I think it's correct
+    # TODO clean this section up, double-check its logic
     inner_layer_count0 = len(genome0.layers) - PRELIMINARY_LAYER_COUNT - POSTLIMINARY_LAYER_COUNT
     inner_layer_count1 = len(genome1.layers) - PRELIMINARY_LAYER_COUNT - POSTLIMINARY_LAYER_COUNT
     min_original_inner_layer_count = min(inner_layer_count0, inner_layer_count1)
@@ -189,7 +185,7 @@ def combine_genomes(genome0, genome1, min_filters, max_filters, min_kernel_dim, 
         while layers[layer_to_change]["type"] != "Dense":
             layer_to_change = random.randint(PRELIMINARY_LAYER_COUNT, len(layers) - 1)
         units = layers[layer_to_change]["units"]
-        layers[layer_to_change]["units"] = max(min_units, random.randint(units - UNIT_MUTATION_MARGIN, units + UNIT_MUTATION_MARGIN))
+        layers[layer_to_change]["units"] = min(max_units, max(min_units, random.randint(units - UNIT_MUTATION_MARGIN, units + UNIT_MUTATION_MARGIN)))
         if random.random() < ACTIVATION_MUTATION_CHANCE:
             layers[layer_to_change]["activation"] = pick_random_activation()
 

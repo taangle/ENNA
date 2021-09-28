@@ -1,0 +1,2 @@
+"batch size","epochs","pop_size","max_gen","gen_to_start_being_elite","parent_count","min units","max units"
+128,32,32,256,220,10,4,14

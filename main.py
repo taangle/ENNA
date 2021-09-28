@@ -22,28 +22,8 @@ MAX_STRIDE_DIM = 4
 MIN_HIDDEN_LAYERS = 2
 MAX_HIDDEN_LAYERS = 8
 MIN_UNITS = 10
-MAX_UNITS = 512
+MAX_UNITS = 128
 MAX_DROPOUT = .5
-
-# uncomment the following (and comment out the above) in order to run the program quickly for testing purposes
-# there are also some lines in load_data you can uncomment to make it even faster
-# POP_SIZE = 4
-# MAX_GEN = 5
-# GEN_TO_START_BEING_ELITE = 4
-# PARENT_COUNT = 2
-# BATCH_SIZE = 50
-# EPOCHS = 4
-# MIN_FILTERS = 2
-# MAX_FILTERS = 8
-# MIN_KERNEL_DIM = 1
-# MAX_KERNEL_DIM = 4
-# MIN_STRIDE_DIM = 1
-# MAX_STRIDE_DIM = 4
-# MIN_HIDDEN_LAYERS = 2
-# MAX_HIDDEN_LAYERS = 4
-# MIN_UNITS = 10
-# MAX_UNITS = 32
-# MAX_DROPOUT = .5
 
 
 def main():
@@ -79,12 +59,28 @@ def main():
     record_generation(0, pop, start_time_str)
     print("==End of generation 0==")
 
+    # evolve the population
+    pop = evolve(pop, data, num_classes, start_time_str)
+
+    # now have an evolved population
+    print("\nThe champions:")
+    max_fitness = 0
+    max_fitness_genome = None
+    for genome in pop:
+        print(genome)
+        if genome.fitness > max_fitness:
+            max_fitness = genome.fitness
+            max_fitness_genome = genome
+
+    print("\nThe ultimate champion:")
+    print(max_fitness_genome)
+
+
+def evolve(pop, data, num_classes, start_time_str):
     for gen_number in range(MAX_GEN):
-        # select parents with some strategy
-        if gen_number >= GEN_TO_START_BEING_ELITE:
-            parents = select_parents(pop, PARENT_COUNT, be_elite=True)
-        else:
-            parents = select_parents(pop, PARENT_COUNT)
+        # select parents
+        its_time_to_be_elitist = gen_number >= GEN_TO_START_BEING_ELITE
+        parents = select_parents(pop, PARENT_COUNT, be_elitist=its_time_to_be_elitist)
 
         # refill population with mutated children of parents
         pop = []
@@ -92,8 +88,8 @@ def main():
             random.shuffle(parents)
             # if PARENT_COUNT is odd, one parent will get left out, but not necessarily indefinitely
             pairs = zip(parents[::2], parents[1::2])
-            for pair in pairs:
-                pop.append(combine_genomes((pair[0]), pair[1],
+            for genome0, genome1 in pairs:
+                pop.append(combine_genomes(genome0, genome1,
                                            min_filters=MIN_FILTERS,
                                            max_filters=MAX_FILTERS,
                                            min_kernel_dim=MIN_KERNEL_DIM,
@@ -117,21 +113,11 @@ def main():
 
             print(genome)
 
+        # TODO it's dumb that the generation number should be one off like this
         record_generation(gen_number + 1, pop, start_time_str)
         print(f"==End of generation {gen_number + 1}==")
 
-    # now you have an evolved population
-    print("\nThe champions:")
-    max_fitness = 0
-    max_fitness_genome = None
-    for genome in pop:
-        print(genome)
-        if genome.fitness > max_fitness:
-            max_fitness = genome.fitness
-            max_fitness_genome = genome
-
-    print("\nThe ultimate champion:")
-    print(max_fitness_genome)
+    return pop
 
 
 # TODO just use a DB instead
@@ -141,12 +127,19 @@ def initialize_history_dir(start_time_str):
     with open(f"histories/{start_time_str}/info.csv", mode="w", newline="") as info_file:
         info_writer = csv.writer(info_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
         # TODO add the rest of the params
-        info_writer.writerow(["batch size", "epochs", "pop_size", "max_gen", "gen_to_start_being_elite", "parent_count", "min units", "max units"])
-        info_writer.writerow([BATCH_SIZE, EPOCHS, POP_SIZE, MAX_GEN, GEN_TO_START_BEING_ELITE, PARENT_COUNT, MIN_UNITS, MAX_UNITS])
+        info_writer.writerow(
+            ["batch size", "epochs", "pop_size", "max_gen", "gen_to_start_being_elite", "parent_count", "min units",
+             "max units"])
+        info_writer.writerow(
+            [BATCH_SIZE, EPOCHS, POP_SIZE, MAX_GEN, GEN_TO_START_BEING_ELITE, PARENT_COUNT, MIN_UNITS, MAX_UNITS]
+        )
 
-    with open(f"histories/{start_time_str}/history.csv", mode="a", newline="") as history_file:
+    with open(f"histories/{start_time_str}/history.csv", mode="w", newline="") as history_file:
         history_writer = csv.writer(history_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
-        history_writer.writerow(["generation", "genome", "accuracy", "training_time", "layer", "type", "units", "activation"])
+        history_writer.writerow(
+            ["generation", "genome", "accuracy", "training_time", "layer", "type", "units", "activation"]
+        )
+
 
 def record_generation(gen_number, pop, start_time_str):
     with open(f"histories/{start_time_str}/history.csv", mode="a", newline="") as history_file:
@@ -169,7 +162,7 @@ def record_generation(gen_number, pop, start_time_str):
                     ])
 
 
-def select_parents(pop, parent_count, be_elite=False):
+def select_parents(pop, parent_count, be_elitist=False):
     total_fitness = sum(genome.fitness for genome in pop)
     probability_dict = {}
     previous_prob = 0
@@ -183,7 +176,7 @@ def select_parents(pop, parent_count, be_elite=False):
             max_fitness = genome.fitness
             max_fitness_genome = genome
 
-    if be_elite:
+    if be_elitist:
         parents = [max_fitness_genome]
     else:
         parents = []
