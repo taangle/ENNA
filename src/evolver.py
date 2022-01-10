@@ -175,14 +175,14 @@ class Evolver:
 
     def select_parents(self, population, be_elitist=False):
         total_fitness = sum(genome.fitness for genome in population)
-        probability_dict = {}
+        probability_thresholds = []
         previous_prob = 0
         max_fitness = 0
         max_fitness_genome = None
         for i in range(len(population)):
             genome = population[i]
-            probability_dict[i] = previous_prob + (genome.fitness / total_fitness)
-            previous_prob = probability_dict[i]
+            probability_thresholds.append(previous_prob + (genome.fitness / total_fitness))
+            previous_prob = probability_thresholds[i]
             if genome.fitness > max_fitness:
                 max_fitness = genome.fitness
                 max_fitness_genome = genome
@@ -196,15 +196,14 @@ class Evolver:
             threshold = random.random()
             index_of_smallest_probability_greater_than_threshold = -1
             for i in range(len(population)):
-                if probability_dict[i] > threshold:
+                if probability_thresholds[i] > threshold:
                     if (index_of_smallest_probability_greater_than_threshold == -1
-                            or probability_dict[i] < probability_dict[
+                            or probability_thresholds[i] < probability_thresholds[
                                 index_of_smallest_probability_greater_than_threshold]):
                         index_of_smallest_probability_greater_than_threshold = i
 
             if index_of_smallest_probability_greater_than_threshold == -1:
-                print("No parent index selected, you are bad at math")
-                continue
+                raise Exception("No parent index selected, you are bad at math")
 
             parents.append(population[index_of_smallest_probability_greater_than_threshold])
 

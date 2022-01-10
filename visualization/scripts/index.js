@@ -11,9 +11,7 @@ let generationInput;
 let playButton;
 let hoverDiv;
 
-// TODO get this automatically
-let lastGenerationIndex = 26;
-let lambda = .1;
+let lastGenerationIndex;
 
 let allLayers;
 let generations;
@@ -22,6 +20,7 @@ let lastDotPositions;
 let timer;
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("~~window.location.pathname: ", window.location.pathname);
     chartSvg = d3.select('#chart');
     // bestLineChartSvg = d3.select('#best-line-chart');
     chartG = chartSvg.append('g')
@@ -35,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chartInnerHeight = chartHeight - chartMargin.top - chartMargin.bottom;
 
     console.log("About to load data");
-    d3.csv('../histories/20210722-001843/history.csv').then(rawLayers => {
+    d3.csv('data/history.csv').then(rawLayers => {
         console.log("Loaded data");
         for (layer of rawLayers) {
             layer["generation"] = +layer["generation"]
@@ -46,7 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
             layer["units"] = +layer["units"]
         }
         allLayers = rawLayers;
+        console.log(allLayers);
+
+        lastGenerationIndex = d3.max(allLayers, l => l["generation"])
            
+        // TODO set max value on generation input here
         generationInput.node().addEventListener('input', changeGeneration);
         playButton.node().addEventListener('click', clickPlayButton);
 
@@ -91,10 +94,7 @@ function drawBestLineChart() {
         for (let layer of thisGeneration) {
             accuracy = layer['accuracy'];
             trainingTime = layer['training_time'];
-            // TODO I know this is dumb, but if this changes, change this
-            // or just add fitness to history
-            inverse = lambda * (1.0 / trainingTime);
-            fitness = accuracy + inverse;
+            fitness = layer['fitness'];
             if (fitness > maxFitness) {
                 maxFitness = fitness;
                 bestAccuracy = accuracy;
@@ -154,7 +154,7 @@ function drawChart() {
     while (lines[0]) lines[0].remove();
 
     let generationIndex = +generationInput.node().value;
-    console.log(generationIndex);
+    console.log("generationIndex: ", generationIndex);
 
     let bestGenomeIndex = -1;
     let maxFitness = 0;
@@ -162,31 +162,29 @@ function drawChart() {
     for (let layer of allLayers.filter(l => l['generation'] === generationIndex)) {
         accuracy = layer['accuracy'];
         trainingTime = layer['training_time'];
-        // TODO if this changes, change this
-        // or just add fitness to history
-        inverse = lambda * (1.0 / trainingTime);
-        fitness = accuracy + inverse;
+        fitness = layer['fitness'];
         if (fitness > maxFitness) {
             maxFitness = fitness;
             bestGenomeIndex = (layer["genome"])
         }
     }
 
-    bestLayers = allLayers.filter(l => (l['generation'] === generationIndex) && (l['genome'] === bestGenomeIndex))
-    bestNumberOfLayers = bestLayers.length
+    let bestLayers = allLayers.filter(l => (l['generation'] === generationIndex) && (l['genome'] === bestGenomeIndex))
+    let numberOfBestLayers = bestLayers.length;
 
     let xScale = d3.scaleLinear()
-        // the domain is the x *values*, so in this case the layer indeces of the genome
-        .domain([0, bestNumberOfLayers])
-        // the range is the *functions* of the *values of x*, so is in this case goes over the inner width of our chart
+        // the domain is the x *values*, so in this case goes over the layer indeces of the genome
+        .domain([0, numberOfBestLayers])
+        // the range is the *functions* of the *values of x*, so in this case goes over the inner width of our chart
         .range([0, chartInnerWidth]);
-    numberOfNodesInWidestDeepLayerAmongAllShallowLayers = Math.max(...(bestLayers.map(l => l['units'])))
+    let numberOfNodesInWidestDeepLayerAmongAllShallowLayers = Math.max(...(bestLayers.map(l => l['units'])))
     let yScale = d3.scaleLinear()
         .domain([0, numberOfNodesInWidestDeepLayerAmongAllShallowLayers])
         .range([0, chartInnerHeight]);
     
     console.log("bestLayers:");
-    console.log(bestLayers)
+    console.log(bestLayers);
+
     let previousLayer;
     let layerIndex = 0;
     for (layer of bestLayers) {
@@ -215,6 +213,7 @@ function drawChart() {
         .attr('y', chartInnerHeight + 15)
         .text(`Fitness: ${maxFitness}`);
     
+    console.log("~~bestLayers[0]: ", bestLayers[0]);
     chartG.append('text')
         .attr('class', 'info')
         .attr('x', chartWidth / 2)

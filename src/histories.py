@@ -30,7 +30,7 @@ def initialize_history_dir(evolver):
     with open(f"{HISTORY_DIR}/{evolver.start_time_str}/{HISTORY_FILE_NAME}", mode="w", newline="") as history_file:
         history_writer = csv.writer(history_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
         history_writer.writerow(
-            ["generation", "genome", "accuracy", "training_time", "layer", "type", "units", "activation"]
+            ["generation", "genome", "accuracy", "training_time", "fitness", "layer", "type", "units", "activation"]
         )
 
 
@@ -48,6 +48,7 @@ def record_generation(gen_number, population, start_time_str):
                         genome_index,
                         genome.accuracy,
                         genome.training_time,
+                        genome.fitness,
                         layer_index,
                         layer["type"],
                         layer["units"],

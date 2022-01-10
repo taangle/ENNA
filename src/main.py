@@ -7,22 +7,22 @@ from src.histories import initialize_history_dir
 import tensorflow as tf
 
 POP_SIZE = 8
-MAX_GEN = 4
-GEN_TO_START_BEING_ELITE = 30
+MAX_GEN = 32
+GEN_TO_START_BEING_ELITE = 28
 PARENT_COUNT = 4
 
-BATCH_SIZE = 64
-EPOCHS = 8
+BATCH_SIZE = 48
+EPOCHS = 14
 MIN_FILTERS = 2
-MAX_FILTERS = 16
+MAX_FILTERS = 8
 MIN_KERNEL_DIM = 1
 MAX_KERNEL_DIM = 4
 MIN_STRIDE_DIM = 1
 MAX_STRIDE_DIM = 4
 MIN_HIDDEN_LAYERS = 2
-MAX_HIDDEN_LAYERS = 16
+MAX_HIDDEN_LAYERS = 6
 MIN_UNITS = 8
-MAX_UNITS = 1024
+MAX_UNITS = 32
 MAX_DROPOUT = .5
 
 
@@ -83,11 +83,6 @@ def main():
 
 def load_data():
     (x_train, y_train), (x_test, y_test) = keras.datasets.cifar10.load_data()
-    # uncomment the below to make things run faster for testing
-    # x_train = x_train[0:len(x_train) // 4]
-    # y_train = y_train[0:len(y_train) // 4]
-    # x_test = x_test[0:len(x_test) // 4]
-    # y_test = y_test[0:len(y_test) // 4]
     num_classes = 10
     input_shape = (32, 32, 3)
 
@@ -96,6 +91,7 @@ def load_data():
     y_train = keras.utils.to_categorical(y_train)
     y_test = keras.utils.to_categorical(y_test)
 
+    # TODO make holdout set for the very end
     return (x_train, y_train), (x_test, y_test), num_classes, input_shape
 
 

@@ -2,11 +2,12 @@ import time
 from keras.models import Sequential
 from keras.layers import Conv2D, Dense, Dropout, Flatten
 
-FITNESS_TIME_ALPHA = .001
+FITNESS_TIME_ALPHA = .0005
 
 
 class Genome:
     def __init__(self, layers, batch_size, epochs, hidden_layer_count):
+        # TODO give Genome objects GUIDs to keep track of ancestry
         self.layers = layers
         self.batch_size = batch_size
         self.epochs = epochs
@@ -32,8 +33,9 @@ class Genome:
 
         score = self.model.evaluate(x_test, y_test, verbose=0)
         self.accuracy = score[1]
-        # TODO adjust how training time affects fitness, currently is negligible for long training times
-        self.fitness = self.accuracy + (FITNESS_TIME_ALPHA * (1 / self.training_time))
+        # accounting for training time like this will hopefully just differentiate models that get similar accuracy
+        #  with very different training times
+        self.fitness = self.accuracy - (FITNESS_TIME_ALPHA * self.training_time)
 
     def _add_layers_to_model(self):
         for layer in self.layers:
@@ -58,6 +60,6 @@ class Genome:
             self.model.add(layer_object)
 
     def __str__(self):
-        string = f"=Genome=\n\tFitness: {self.fitness}\n\tAccuracy: {self.accuracy}"
-        # TODO add layers to string in some form
+        string = f"=Genome=\n\tFitness: {self.fitness}\n\tAccuracy: {self.accuracy}"\
+            f"\n\tLayer count (all types): {len(self.layers)}"
         return string
